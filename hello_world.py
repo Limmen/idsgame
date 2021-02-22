@@ -5,7 +5,7 @@ def attack_against_baseline_defense_env():
     versions = range(0,20)
     #version = versions[0]
     version = versions[2]
-    env_name = "idsgame-minimal_defense-v" + str(version)
+    env_name = "idsgame-minimal_defense-v3"
     env = gym.make(env_name)
     done = False
     num_episodes = 1000
@@ -16,7 +16,7 @@ def attack_against_baseline_defense_env():
             a = (attack_action, defense_action)
             obs, reward, done, info = env.step(a)
             attacker_obs, defender_obs = obs
-            print("a:{}, obs:{}".format(attack_action, attacker_obs))
+            print("a:{}, obs:{}, reward{}".format(attack_action, attacker_obs, reward))
             env.render()
         done = False
         env.reset()
