@@ -90,27 +90,27 @@ if __name__ == '__main__':
     avg_bql_rewards_stds = np.std(tuple(avg_bql_rewards_data), axis=0, ddof=1)
 
     df_q_0 = pd.read_csv("/home/kim/workspace/idsgame/tabular_q/results/data/0/1625491300.7774715_train.csv")
-    df_q_299 = pd.read_csv("/Users/kimham/workspace/idsgame/tabular_q/results/data/299/1613997072.074869_train.csv")
-    df_q_999 = pd.read_csv("/Users/kimham/workspace/idsgame/tabular_q/results/data/999/1613996918.8479428_train.csv")
+    df_q_299 = pd.read_csv("/home/kim/workspace/idsgame/tabular_q/results/data/999/1625491462.834143_train.csv")
+    df_q_999 = pd.read_csv("/home/kim/workspace/idsgame/tabular_q/results/data/299/1625491618.800865_train.csv")
     q_dfs = [df_q_0, df_q_299, df_q_999]
 
     avg_q_rewards_data = list(map(lambda df: df["hack_probability"].values, q_dfs))
     avg_q_rewards_means = np.mean(tuple(avg_q_rewards_data), axis=0)
     avg_q_rewards_stds = np.std(tuple(avg_q_rewards_data), axis=0, ddof=1)
 
-    ylim_rew = (0, 1.2)
+    ylim_rew = (0, 1)
     plot_rewards(avg_bql_rewards_data, avg_bql_rewards_means, avg_bql_rewards_stds,
                  avg_q_rewards_data, avg_q_rewards_means, avg_q_rewards_stds,
                  ylim_rew,
                  "bql_vs_q_rewards", markevery=5, optimal_steps=10, optimal_reward=1, sample_step=1,
                  plot_opt=True)
-    ylim_rew = (0.0, 1)
-    print(avg_bql_rewards_means)
-    plot_rewards(avg_bql_rewards_data, avg_bql_rewards_means, avg_bql_rewards_stds,
-                 avg_bql_rewards_data, avg_bql_rewards_means, avg_bql_rewards_stds,
-                 ylim_rew,
-                 "bql_vs_q_rewards", markevery=5, optimal_steps=10, optimal_reward=1, sample_step=1,
-                 plot_opt=True)
+    # ylim_rew = (0.0, 1)
+    # print(avg_bql_rewards_means)
+    # plot_rewards(avg_bql_rewards_data, avg_bql_rewards_means, avg_bql_rewards_stds,
+    #              avg_bql_rewards_data, avg_bql_rewards_means, avg_bql_rewards_stds,
+    #              ylim_rew,
+    #              "bql_vs_q_rewards", markevery=5, optimal_steps=10, optimal_reward=1, sample_step=1,
+    #              plot_opt=True)
 
 
 
