@@ -48,25 +48,35 @@ class BQLAgent(QAgent):
             if s not in self.Q_defender: self.Q_defender[s] = {}
 
             defense_node_id, _, defense_type, = self.env.get_defender_action((None, a))
-            if defense_type < 10:
-                defense_bonus = 10 * (np.mean(self.env.state.defense_values[defense_node_id]) -
-                                     self.env.state.defense_values[defense_node_id][defense_type])
+            if defense_node_id == 0 and defense_type == 0:
+                defense_bonus = 100
+            elif defense_node_id == 0 and defense_type > 0:
+                defense_bonus = 10
             else:
-                defense_bonus = 0
-            self.Q_defender[s][a] = (self.config.d_mu0 + defense_bonus, self.config.d_lambda0, self.config.d_alpha0, self.config.d_beta0)
+                defense_bonus = -100
+            self.Q_defender[s][a] = (self.config.d_mu0 + defense_bonus, self.config.d_lambda0, self.config.d_alpha0+1000, self.config.d_beta0)
 
-    def sample_q(self, s):
+    def sample_q(self, s, attacker=True):
 
         # Arrays for holding q samples and corresponding actions
         qs, acts = [], []
 
-        for a, hyp in self.Q_attacker[s].items():
-            # Sample from student-t distribution
-            st = np.random.standard_t(2 * hyp[2])
+        if attacker:
+            for a, hyp in self.Q_attacker[s].items():
+                # Sample from student-t distribution
+                st = np.random.standard_t(2 * hyp[2])
 
-            # q sample from t:  m0 + t * (beta / (lamda * alpha))**0.5
-            qs.append(hyp[0] + st * (hyp[3] / (hyp[1] * hyp[2])) ** 0.5)
-            acts.append(a)
+                # q sample from t:  m0 + t * (beta / (lamda * alpha))**0.5
+                qs.append(hyp[0] + st * (hyp[3] / (hyp[1] * hyp[2])) ** 0.5)
+                acts.append(a)
+        else:
+            for a, hyp in self.Q_defender[s].items():
+                # Sample from student-t distribution
+                st = np.random.standard_t(2 * hyp[2])
+
+                # q sample from t:  m0 + t * (beta / (lamda * alpha))**0.5
+                qs.append(hyp[0] + st * (hyp[3] / (hyp[1] * hyp[2])) ** 0.5)
+                acts.append(a)
 
         return np.array(qs), np.array(acts)
 
@@ -127,9 +137,12 @@ class BQLAgent(QAgent):
         if attacker:
             actions = list(range(self.env.num_attack_actions))
             legal_actions = list(filter(lambda action: self.env.is_attack_legal(action), actions))
+        else:
+            actions = list(range(self.env.num_defense_actions))
+            legal_actions = list(filter(lambda action: self.env.is_defense_legal(action), actions))
 
         # Sample q values for each action from current state
-        qs, acts = self.sample_q(s)
+        qs, acts = self.sample_q(s, attacker=attacker)
 
         max_legal_action_value = float("-inf")
         max_legal_action = float("-inf")
@@ -140,9 +153,9 @@ class BQLAgent(QAgent):
                     max_legal_action = i
         else:
             for i in range(len(self.Q_defender[s])):
-                if i in legal_actions and self.Q_defender[s][i] > max_legal_action_value:
-                                max_legal_action_value = self.Q_defender[s][i]
-                                max_legal_action = i
+                if i in legal_actions and qs[i] > max_legal_action_value:
+                    max_legal_action_value = qs[i]
+                    max_legal_action = i
         return max_legal_action
 
     def max_mu0_action(self, s, attacker=True):
@@ -198,7 +211,6 @@ class BQLAgent(QAgent):
                 s_idx_d = defender_state_node_id
                 attacker_action = 0
                 defender_action = 0
-
                 # Get attacker and defender actions
                 if self.config.attacker:
                     s_idx_a = self.env.get_attacker_node_from_observation(attacker_obs)

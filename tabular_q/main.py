@@ -35,7 +35,7 @@ def default_config_path() -> str:
     return config_path
 
 
-def setup_agent() -> ClientConfig:
+def setup_agent_attacker() -> ClientConfig:
     """
     :return: Default configuration for the experiment
     """
@@ -49,6 +49,29 @@ def setup_agent() -> ClientConfig:
     env_name = "idsgame-random_defense-v3"
     client_config = ClientConfig(env_name=env_name, attacker_type=AgentType.TABULAR_Q_AGENT.value,
                                  mode=RunnerMode.TRAIN_ATTACKER.value,
+                                 q_agent_config=q_agent_config, output_dir=default_output_dir(),
+                                 title="TrainingQAgent vs DefendMinimalDefender",
+                                 run_many=True, random_seeds=[0, 999, 299])
+    env = gym.make(client_config.env_name, idsgame_config=client_config.idsgame_config,
+                   save_dir=client_config.output_dir + "/results/data/" + str(client_config.random_seed),
+                   initial_state_path=client_config.initial_state_path)
+    attacker = TabularQAgent(env, client_config.q_agent_config)
+    return attacker, client_config, env
+
+def setup_agent_defender() -> ClientConfig:
+    """
+    :return: Default configuration for the experiment
+    """
+    q_agent_config = QAgentConfig(gamma=0.999, alpha=0.0005, epsilon=1, render=False, eval_sleep=0.9,
+                                  min_epsilon=0.01, eval_episodes=100, train_log_frequency=50,
+                                  epsilon_decay=0.999, video=True, eval_log_frequency=1,
+                                  video_fps=5, video_dir=default_output_dir() + "/results/videos", num_episodes=5001,
+                                  eval_render=False, gifs=True, gif_dir=default_output_dir() + "/results/gifs",
+                                  eval_frequency=1000, attacker=False, defender=True, video_frequency=101,
+                                  save_dir=default_output_dir() + "/results/data")
+    env_name = "idsgame-maximal_attack-v3"
+    client_config = ClientConfig(env_name=env_name, defender_type=AgentType.TABULAR_Q_AGENT.value,
+                                 mode=RunnerMode.TRAIN_DEFENDER.value,
                                  q_agent_config=q_agent_config, output_dir=default_output_dir(),
                                  title="TrainingQAgent vs DefendMinimalDefender",
                                  run_many=True, random_seeds=[0, 999, 299])
@@ -88,13 +111,15 @@ def setup_train(config: ClientConfig, random_seed):
     return time_str
 
 if __name__ == '__main__':
-    attacker, config, env = setup_agent()
+    # attacker, config, env = setup_agent_attacker()
+    train_agent, config, env = setup_agent_defender()
     if not config.run_many:
         random_seed = 0
         time_str = setup_train(config, random_seed)
-        train(attacker, time_str, random_seed)
+        train(train_agent, time_str, random_seed)
     else:
         for seed in config.random_seeds:
-            attacker, config, env = setup_agent()
+            # train_agent, config, env = setup_agent_attacker()
+            train_agent, config, env = setup_agent_defender()
             time_str = setup_train(config, seed)
-            train(attacker, time_str, seed)
+            train(train_agent, time_str, seed)
